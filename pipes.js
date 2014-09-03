@@ -56,15 +56,24 @@ function init() {
 	var cylMat = new THREE.MeshNormalMaterial();
 	cyl = new THREE.Mesh(cylGeo, cylMat);
 	scene.add(cyl);
-		
+	
+	var tween = new TWEEN.Tween( { scale:1} )
+		.to( { scale: 5 }, 5000 )
+		.easing( TWEEN.Easing.Linear.None )
+		.onUpdate( function () {
+			cyl.scale.y = this.scale;
+			cyl.position.y = (this.scale/2) + 1;
+		})		
+		.start();	
 	render();
 
 }
 
 
-function render() {	
+function render(time) {	
 	requestAnimationFrame( render );
-	controls.update(); 				
+	controls.update(); 		
+	TWEEN.update( time );	
 	renderer.render( scene, camera );
 	
 }
