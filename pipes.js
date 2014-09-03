@@ -5,13 +5,14 @@ var PIPE_RADIUS = 0.10;
 var PIPE_NUM_SIDES = 10;
 var PIPE_ANIM_SPEED = 3000;
 
-var JOINT_RADIUS = 0.25;
+var JOINT_RADIUS = 0.15;
 var JOINT_NUM_SIDES = 10;
 
 var DIR_UP = 0, DIR_DOWN = 1, DIR_LEFT = 2, DIR_RIGHT = 3, DIR_FORWARD = 4, DIR_BACKWARD = 5; //Poor man's enum
 
 //Global variables
 var container, scene, camera, renderer, controls;
+var origin;
 var floor;
 
 //Global materials
@@ -22,7 +23,7 @@ var jointGeo = new THREE.SphereGeometry(JOINT_RADIUS, JOINT_NUM_SIDES, JOINT_NUM
 var jointMat = new THREE.MeshLambertMaterial({color:0x00ff00});
 
 init();
-var cyl;
+
 function init() {
 		
 	scene = new THREE.Scene;
@@ -65,15 +66,20 @@ function init() {
 	});
 	floor = new THREE.Mesh(floorGeometry, floorMaterial);
 	floor.rotateX(Math.PI/2);
-	scene.add(floor);	
+	//scene.add(floor);	
 		
-	//Cylinder
-	var cylGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, PIPE_NUM_SIDES, 1, false);
-	var cylMat = new THREE.MeshNormalMaterial();	
-	cyl = new THREE.Mesh(cylGeo, cylMat);
-	scene.add(cyl);
+	//origin
+	var originGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, PIPE_NUM_SIDES, 1, false);
+	var originMat = new THREE.MeshNormalMaterial();	
+	origin = new THREE.Mesh(originGeo, originMat);
+	scene.add(origin);
 	
-	addPipe(new THREE.Vector3(0, 0, 0), 2, DIR_BACKWARD);
+	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_FORWARD);
+	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_BACKWARD);
+	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_LEFT);
+	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_RIGHT);
+	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_UP);
+	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_DOWN);
 	
 	render();
 
