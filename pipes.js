@@ -66,13 +66,13 @@ function init() {
 	scene.add(floor);	
 		
 	//Cylinder
-	var cylGeo = new THREE.CylinderGeometry(1, 1, 1, PIPE_NUM_SIDES, 1, false);
+	// var cylGeo = new THREE.CylinderGeometry(1, 1, 1, PIPE_NUM_SIDES, 1, false);
 
-	var cylMat = new THREE.MeshNormalMaterial();
-	cyl = new THREE.Mesh(cylGeo, cylMat);
-	scene.add(cyl);
+	// var cylMat = new THREE.MeshNormalMaterial();
+	// cyl = new THREE.Mesh(cylGeo, cylMat);
+	// scene.add(cyl);
 	
-	addPipe(new THREE.Vector3(1, 1, 0), 2);
+	addPipe2(new THREE.Vector3(0, 0, 0), 2);
 	
 	render();
 
@@ -93,6 +93,28 @@ function addPipe(pos, length) {
 		.onComplete(function() {
 			var joint = new THREE.Mesh(jointGeo, jointMat);
 			joint.position.set(pos.x, pos.y + length, pos.z);
+			scene.add(joint);
+		})
+		.start();	
+		
+} 
+
+function addPipe2(pos, length) {
+	var pipe = new THREE.Mesh(pipeGeo, pipeMat);	
+	pipe.rotateZ(Math.PI/2);
+	pipe.position.set(pos.x + (length/2), pos.y, pos.z);
+	scene.add(pipe);
+	
+	var tween = new TWEEN.Tween( { scale:1} )
+		.to( { scale: length }, PIPE_ANIM_SPEED )
+		.easing( TWEEN.Easing.Quadratic.Out )
+		.onUpdate(function () {			
+			pipe.scale.x = this.scale;
+			pipe.position.x = (this.scale/2) + pos.x;			
+		})		
+		.onComplete(function() {
+			var joint = new THREE.Mesh(jointGeo, jointMat);
+			joint.position.set(pos.x + length, pos.y, pos.z);
 			scene.add(joint);
 		})
 		.start();	
