@@ -5,6 +5,9 @@ var PIPE_RADIUS = 0.10;
 var PIPE_NUM_SIDES = 10;
 var PIPE_ANIM_SPEED = 3000;
 
+var JOINT_RADIUS = 0.25;
+var JOINT_NUM_SIDES = 10;
+
 //Global variables
 var container, scene, camera, renderer, controls;
 var floor;
@@ -12,6 +15,9 @@ var floor;
 //Global materials
 var pipeGeo = new THREE.CylinderGeometry(PIPE_RADIUS, PIPE_RADIUS, 1, PIPE_NUM_SIDES, 1, false);
 var pipeMat = new THREE.MeshLambertMaterial({color:0xff0000});//MeshNormalMaterial();
+
+var jointGeo = new THREE.SphereGeometry(JOINT_RADIUS, JOINT_NUM_SIDES, JOINT_NUM_SIDES);
+var jointMat = new THREE.MeshLambertMaterial({color:0x00ff00});
 
 init();
 var cyl;
@@ -66,27 +72,31 @@ function init() {
 	cyl = new THREE.Mesh(cylGeo, cylMat);
 	scene.add(cyl);
 	
-	addPipe(new THREE.Vector3(1, 1, 0), 3);
+	addPipe(new THREE.Vector3(1, 1, 0), 2);
 	
 	render();
 
 }
 
 function addPipe(pos, length) {
-	var pipe = new THREE.Mesh(pipeGeo, pipeMat);
-	
+	var pipe = new THREE.Mesh(pipeGeo, pipeMat);	
 	pipe.position.set(pos.x, pos.y, pos.z);
+	scene.add(pipe);
 	
 	var tween = new TWEEN.Tween( { scale:1} )
 		.to( { scale: length }, PIPE_ANIM_SPEED )
 		.easing( TWEEN.Easing.Quadratic.Out )
-		.onUpdate( function () {			
+		.onUpdate(function () {			
 			pipe.scale.y = this.scale;
 			pipe.position.y = (this.scale/2) + pos.y;			
 		})		
+		.onComplete(function() {
+			var joint = new THREE.Mesh(jointGeo, jointMat);
+			joint.position.set(pos.x, pos.y + length, pos.z);
+			scene.add(joint);
+		})
 		.start();	
 		
-	scene.add(pipe);
 } 
 
 function render(time) {	
