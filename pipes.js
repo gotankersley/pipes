@@ -1,8 +1,17 @@
 'use strict';
 
+//Constants
+var PIPE_RADIUS = 0.10;
+var PIPE_NUM_SIDES = 10;
+var PIPE_ANIM_SPEED = 3000;
+
 //Global variables
 var container, scene, camera, renderer, controls;
 var floor;
+
+//Global materials
+var pipeGeo = new THREE.CylinderGeometry(PIPE_RADIUS, PIPE_RADIUS, 1, PIPE_NUM_SIDES, 1, false);
+var pipeMat = new THREE.MeshLambertMaterial({color:0xff0000});//MeshNormalMaterial();
 
 init();
 var cyl;
@@ -43,7 +52,7 @@ function init() {
 	//Floor		
 	var floorGeometry = new THREE.PlaneGeometry(100, 100);
 	var floorMaterial = new THREE.MeshLambertMaterial({
-		color: 0xff0000,
+		color: 0x0000ff,		
 		side:THREE.DoubleSide
 	});
 	floor = new THREE.Mesh(floorGeometry, floorMaterial);
@@ -51,24 +60,34 @@ function init() {
 	scene.add(floor);	
 		
 	//Cylinder
-	var cylGeo = new THREE.CylinderGeometry(1, 1, 1, 10, 1, false);
-	//var cylMat = new THREE.MeshNormalMaterial({wireframe:true});
+	var cylGeo = new THREE.CylinderGeometry(1, 1, 1, PIPE_NUM_SIDES, 1, false);
+
 	var cylMat = new THREE.MeshNormalMaterial();
 	cyl = new THREE.Mesh(cylGeo, cylMat);
 	scene.add(cyl);
 	
-	var tween = new TWEEN.Tween( { scale:1} )
-		.to( { scale: 5 }, 5000 )
-		.easing( TWEEN.Easing.Linear.None )
-		.onUpdate( function () {
-			cyl.scale.y = this.scale;
-			cyl.position.y = (this.scale/2) + 1;
-		})		
-		.start();	
+	addPipe(new THREE.Vector3(1, 1, 0), 3);
+	
 	render();
 
 }
 
+function addPipe(pos, length) {
+	var pipe = new THREE.Mesh(pipeGeo, pipeMat);
+	
+	pipe.position.set(pos.x, pos.y, pos.z);
+	
+	var tween = new TWEEN.Tween( { scale:1} )
+		.to( { scale: length }, PIPE_ANIM_SPEED )
+		.easing( TWEEN.Easing.Quadratic.Out )
+		.onUpdate( function () {			
+			pipe.scale.y = this.scale;
+			pipe.position.y = (this.scale/2) + pos.y;			
+		})		
+		.start();	
+		
+	scene.add(pipe);
+} 
 
 function render(time) {	
 	requestAnimationFrame( render );
