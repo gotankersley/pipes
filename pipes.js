@@ -3,8 +3,8 @@
 //Constants
 var PIPE_RADIUS = 0.10;
 var PIPE_NUM_SIDES = 10;
-var PIPE_ANIM_SPEED_PER_SECTION = 100;
-var PIPES_MAX = 30;
+var PIPE_ANIM_SPEED_PER_SECTION = 500;
+var PIPES_MAX = 1000;
 
 var JOINT_RADIUS = 0.15;
 var JOINT_NUM_SIDES = 10;
@@ -39,7 +39,9 @@ function init() {
 	//Camera
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);	
 	scene.add(camera);	
-	camera.position.set(HALF_ROOM,HALF_ROOM,ROOM_SIZE + HALF_ROOM);	
+	camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM+ROOM_SIZE);
+	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
+	//camera.lookAt(new THREE.Vector3(HALF_ROOM,HALF_ROOM,HALF_ROOM));
 	
 	//Renderer
 	renderer = new THREE.WebGLRenderer( {antialias:true} );		
@@ -90,24 +92,25 @@ function init() {
 
 }
 
-
-function addNext(startingPos, startingDir) {
-	
+function addNext(startingPos, lastDir) {
 	if (numPipes++ < PIPES_MAX) {
 		var outOfBox = true;
 		while(outOfBox){
-			//Get new random direction that can't be the opposite of the way it came			
-			var randDir = Math.floor(Math.random() * POSSIBLE_DIRS); 
-			var goingBackOnSelf = false;
-			if (randDir < 3) { //Positive
-				if (randDir + 3 == startingDir) goingBackOnSelf = true;					
-			}
-			else { //Negative
-				if (randDir - 3 == startingDir) goingBackOnSelf = true;	
-			}
-			if (goingBackOnSelf) randDir = startingDir;
-			var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
+			
+			var randDir;
+			do{
+				randDir = Math.floor(Math.random() * 6); //6 possible directions			
+			}while(
+				(randDir == lastDir)
+				|| (randDir == DIR_UP && lastDir == DIR_DOWN)
+				|| (randDir == DIR_DOWN && lastDir == DIR_UP)
+				|| (randDir == DIR_LEFT && lastDir == DIR_RIGHT)
+				|| (randDir == DIR_RIGHT && lastDir == DIR_LEFT)
+				|| (randDir == DIR_FORWARD && lastDir == DIR_BACKWARD)
+				|| (randDir == DIR_BACKWARD && lastDir == DIR_FORWARD)
+			);
 
+			var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
 			switch(randDir){
 				case DIR_UP:
 					if(startingPos.y + randLength < ROOM_SIZE){
@@ -159,17 +162,26 @@ function addPipe(pos, length, dir, completeFn) {
 		pipe.position.set(pos.x, pos.y, pos.z + (dirScalar * 0.5));
 	}
 	
-	scene.add(pipe);
+	var added = false;
 	
-	var tween = new TWEEN.Tween({scale:1} )
+	var tween = new TWEEN.Tween({scale:.01} )
 		.to( { scale: length }, PIPE_ANIM_SPEED_PER_SECTION * length )
-		.easing( TWEEN.Easing.Quadratic.Out )
+		.easing( TWEEN.Easing.Quadratic.InOut )
 		.onUpdate(function () {			
+			if(!added){
+				scene.add(pipe);
+				added = true;
+			}
 			pipe.scale.y = this.scale;
 			if (dir == DIR_UP || dir == DIR_DOWN) pipe.position.y = dirScalar * (this.scale/2) + pos.y;			
 			else if (dir == DIR_LEFT || dir == DIR_RIGHT) pipe.position.x = dirScalar * (this.scale/2) + pos.x;			
 			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) pipe.position.z = dirScalar * (this.scale/2) + pos.z;
-			
+
+			var endPos;
+			if (dir == DIR_UP || dir == DIR_DOWN) endPos = new THREE.Vector3(pos.x, pos.y + (dirScalar * this.scale), pos.z);
+			else if (dir == DIR_LEFT || dir == DIR_RIGHT) endPos = new THREE.Vector3(pos.x + (dirScalar * this.scale), pos.y, pos.z);
+			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) endPos = new THREE.Vector3(pos.x, pos.y, pos.z + (dirScalar * this.scale));	
+			camera.lookAt(endPos);
 		})		
 		.onComplete(function() {
 			var joint = new THREE.Mesh(jointGeo, jointMat);
