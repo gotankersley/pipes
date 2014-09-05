@@ -3,7 +3,7 @@
 //Constants
 var PIPE_RADIUS = 0.10;
 var PIPE_NUM_SIDES = 10;
-var PIPE_ANIM_SPEED_PER_SECTION = 500;
+var PIPE_ANIM_SPEED_PER_SECTION = 250;
 var PIPES_MAX = 1000;
 
 var JOINT_RADIUS = 0.15;
@@ -40,7 +40,8 @@ function init() {
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);	
 	scene.add(camera);	
 	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM+ROOM_SIZE);
-	camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
+	camera.position.set(HALF_ROOM,0,HALF_ROOM);
+	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
 	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
 	//camera.lookAt(new THREE.Vector3(HALF_ROOM,HALF_ROOM,HALF_ROOM));
 	
