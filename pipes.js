@@ -23,7 +23,7 @@ var numPipes = 0;
 
 //Global materials
 var pipeGeo = new THREE.CylinderGeometry(PIPE_RADIUS, PIPE_RADIUS, 1, PIPE_NUM_SIDES, 1, false);
-var pipeMat = new THREE.MeshLambertMaterial({color:0xff0000});//MeshNormalMaterial();
+var pipeMat = new THREE.MeshLambertMaterial({color:0xff0000});
 
 var jointGeo = new THREE.SphereGeometry(JOINT_RADIUS, JOINT_NUM_SIDES, JOINT_NUM_SIDES);
 var jointMat = new THREE.MeshLambertMaterial({color:0x00ff00});
@@ -39,8 +39,7 @@ function init() {
 	//Camera
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);	
 	scene.add(camera);	
-	camera.position.set(HALF_ROOM,HALF_ROOM,ROOM_SIZE + HALF_ROOM);
-	//camera.lookAt(new THREE.Vector3(HALF_ROOM,HALF_ROOM,HALF_ROOM));
+	camera.position.set(HALF_ROOM,HALF_ROOM,ROOM_SIZE + HALF_ROOM);	
 	
 	//Renderer
 	renderer = new THREE.WebGLRenderer( {antialias:true} );		
@@ -62,17 +61,7 @@ function init() {
 	
 	var hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.3);
 	hemi.position.set(0, 10, 0);
-	scene.add(hemi);	
-	
-	//Floor		
-	var floorGeo = new THREE.PlaneGeometry(100, 100);
-	var floorMat = new THREE.MeshLambertMaterial({
-		color: 0x0000ff,		
-		side:THREE.DoubleSide
-	});
-	floor = new THREE.Mesh(floorGeo, floorMat);
-	floor.rotateX(Math.PI/2);
-	//scene.add(floor);	
+	scene.add(hemi);		
 		
 	//Origin
 	var originGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, PIPE_NUM_SIDES, 1, false);
