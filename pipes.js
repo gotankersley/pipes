@@ -134,7 +134,7 @@ function addNext(startingPos) {
 						outOfBox = false;
 					}
 					break;
-				case DIR_BACKWARDS:
+				case DIR_BACKWARD:
 					if(startingPos.z - randLength > 0){
 						outOfBox = false;
 					}
