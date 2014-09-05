@@ -81,6 +81,14 @@ function init() {
 	scene.add(room);
 	
 	//Place pipes
+	startPipe();
+
+	
+	render();
+
+}
+
+function startPipe() {
 	var randPos = new THREE.Vector3(
 			Math.floor(Math.random() * ROOM_SIZE),
 			Math.floor(Math.random() * ROOM_SIZE),
@@ -88,11 +96,8 @@ function init() {
 	);
 	var randDir = Math.floor(Math.random() * POSSIBLE_DIRS); 
 	addNext(randPos);
-
-	
-	render();
-
 }
+
 
 function addNext(startingPos, lastDir) {
 	if (numPipes++ < PIPES_MAX) {
