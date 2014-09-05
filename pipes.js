@@ -3,8 +3,8 @@
 //Constants
 var PIPE_RADIUS = 0.10;
 var PIPE_NUM_SIDES = 10;
-var PIPE_ANIM_SPEED_PER_SECTION = 250;
-var PIPES_MAX = 3;
+var PIPE_ANIM_SPEED_PER_SECTION = 100;
+var PIPES_MAX = 30;
 
 var JOINT_RADIUS = 0.15;
 var JOINT_NUM_SIDES = 10;
@@ -12,7 +12,8 @@ var JOINT_NUM_SIDES = 10;
 var ROOM_SIZE = 20;
 var HALF_ROOM = ROOM_SIZE/2;
 
-var DIR_UP = 0, DIR_DOWN = 1, DIR_LEFT = 2, DIR_RIGHT = 3, DIR_FORWARD = 4, DIR_BACKWARD = 5; //Poor man's enum
+var POSSIBLE_DIRS = 6;
+var DIR_UP = 0, DIR_RIGHT = 1, DIR_FORWARD = 2, DIR_DOWN = 3, DIR_LEFT = 4, DIR_BACKWARD = 5; //Poor man's enum
 
 //Global variables
 var container, scene, camera, renderer, controls;
@@ -92,6 +93,7 @@ function init() {
 			Math.floor(Math.random() * ROOM_SIZE),
 			Math.floor(Math.random() * ROOM_SIZE)
 	);
+	var randDir = Math.floor(Math.random() * POSSIBLE_DIRS); 
 	addNext(randPos);
 
 	
@@ -100,12 +102,21 @@ function init() {
 }
 
 
-function addNext(startingPos) {
+function addNext(startingPos, startingDir) {
 	
 	if (numPipes++ < PIPES_MAX) {
 		var outOfBox = true;
 		while(outOfBox){
-			var randDir = Math.floor(Math.random() * 6); //6 possible directions			
+			//Get new random direction that can't be the opposite of the way it came			
+			var randDir = Math.floor(Math.random() * POSSIBLE_DIRS); 
+			var goingBackOnSelf = false;
+			if (randDir < 3) { //Positive
+				if (randDir + 3 == startingDir) goingBackOnSelf = true;					
+			}
+			else { //Negative
+				if (randDir - 3 == startingDir) goingBackOnSelf = true;	
+			}
+			if (goingBackOnSelf) randDir = startingDir;
 			var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
 
 			switch(randDir){
@@ -180,7 +191,7 @@ function addPipe(pos, length, dir, completeFn) {
 			
 			joint.position.copy(endPos);
 			scene.add(joint);
-			completeFn(endPos);
+			completeFn(endPos, dir);
 		})
 		.start();	
 		
