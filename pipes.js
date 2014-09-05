@@ -3,10 +3,14 @@
 //Constants
 var PIPE_RADIUS = 0.10;
 var PIPE_NUM_SIDES = 10;
-var PIPE_ANIM_SPEED = 3000;
+var PIPE_ANIM_SPEED_PER_SECTION = 250;
+var PIPES_MAX = 3;
 
 var JOINT_RADIUS = 0.15;
 var JOINT_NUM_SIDES = 10;
+
+var ROOM_SIZE = 20;
+var HALF_ROOM = ROOM_SIZE/2;
 
 var DIR_UP = 0, DIR_DOWN = 1, DIR_LEFT = 2, DIR_RIGHT = 3, DIR_FORWARD = 4, DIR_BACKWARD = 5; //Poor man's enum
 
@@ -14,6 +18,7 @@ var DIR_UP = 0, DIR_DOWN = 1, DIR_LEFT = 2, DIR_RIGHT = 3, DIR_FORWARD = 4, DIR_
 var container, scene, camera, renderer, controls;
 var origin;
 var floor;
+var numPipes = 0;
 
 //Global materials
 var pipeGeo = new THREE.CylinderGeometry(PIPE_RADIUS, PIPE_RADIUS, 1, PIPE_NUM_SIDES, 1, false);
@@ -23,7 +28,6 @@ var jointGeo = new THREE.SphereGeometry(JOINT_RADIUS, JOINT_NUM_SIDES, JOINT_NUM
 var jointMat = new THREE.MeshLambertMaterial({color:0x00ff00});
 
 init();
-
 function init() {
 		
 	scene = new THREE.Scene;
@@ -34,8 +38,8 @@ function init() {
 	//Camera
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);	
 	scene.add(camera);	
-	camera.position.set(0,0,10);
-	camera.lookAt(scene.position);	
+	camera.position.set(HALF_ROOM,HALF_ROOM,ROOM_SIZE + HALF_ROOM);
+	//camera.lookAt(new THREE.Vector3(HALF_ROOM,HALF_ROOM,HALF_ROOM));
 	
 	//Renderer
 	renderer = new THREE.WebGLRenderer( {antialias:true} );		
@@ -45,6 +49,7 @@ function init() {
 	container.appendChild( renderer.domElement );
 	
 	controls = new THREE.OrbitControls( camera, renderer.domElement );	
+	controls.center = new THREE.Vector3(HALF_ROOM, HALF_ROOM, HALF_ROOM);
 	renderer.shadowMapEnabled = true;
 	
 	//Scene	
@@ -59,33 +64,52 @@ function init() {
 	scene.add(hemi);	
 	
 	//Floor		
-	var floorGeometry = new THREE.PlaneGeometry(100, 100);
-	var floorMaterial = new THREE.MeshLambertMaterial({
+	var floorGeo = new THREE.PlaneGeometry(100, 100);
+	var floorMat = new THREE.MeshLambertMaterial({
 		color: 0x0000ff,		
 		side:THREE.DoubleSide
 	});
-	floor = new THREE.Mesh(floorGeometry, floorMaterial);
+	floor = new THREE.Mesh(floorGeo, floorMat);
 	floor.rotateX(Math.PI/2);
 	//scene.add(floor);	
 		
-	//origin
+	//Origin
 	var originGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, PIPE_NUM_SIDES, 1, false);
 	var originMat = new THREE.MeshNormalMaterial();	
 	origin = new THREE.Mesh(originGeo, originMat);
 	scene.add(origin);
 	
-	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_FORWARD);
-	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_BACKWARD);
-	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_LEFT);
-	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_RIGHT);
-	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_UP);
-	addPipe(new THREE.Vector3(0, 0, 0), 5, DIR_DOWN);
+	//Room / viewing volume
+	var roomGeo = new THREE.BoxGeometry(ROOM_SIZE, ROOM_SIZE, ROOM_SIZE);
+	var roomMat = new THREE.MeshBasicMaterial({color: 0x444444, wireframe:true});
+	var room = new THREE.Mesh(roomGeo, roomMat);
+	room.position.set(HALF_ROOM, HALF_ROOM, HALF_ROOM);
+	scene.add(room);
+	
+	//Place pipes
+	var randPos = new THREE.Vector3(
+			Math.floor(Math.random() * ROOM_SIZE),
+			Math.floor(Math.random() * ROOM_SIZE),
+			Math.floor(Math.random() * ROOM_SIZE)
+	);
+	addNext(randPos);
+
 	
 	render();
 
 }
 
-function addPipe(pos, length, dir) {
+
+function addNext(startingPos) {
+	
+	if (numPipes++ < PIPES_MAX) {
+		var randDir = Math.floor(Math.random() * 6); //6 possible directions			
+		var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
+		addPipe(startingPos, randLength, randDir, addNext);
+	}
+}
+
+function addPipe(pos, length, dir, completeFn) {
 	var dirScalar = (dir == DIR_DOWN || dir == DIR_LEFT || dir == DIR_BACKWARD)? -1 : 1;
 	
 	var pipe = new THREE.Mesh(pipeGeo, pipeMat);
@@ -101,22 +125,26 @@ function addPipe(pos, length, dir) {
 	
 	scene.add(pipe);
 	
-	var tween = new TWEEN.Tween( { scale:1} )
-		.to( { scale: length }, PIPE_ANIM_SPEED )
+	var tween = new TWEEN.Tween({scale:1} )
+		.to( { scale: length }, PIPE_ANIM_SPEED_PER_SECTION * length )
 		.easing( TWEEN.Easing.Quadratic.Out )
 		.onUpdate(function () {			
 			pipe.scale.y = this.scale;
-			if (dir == DIR_UP || dir == DIR_DOWN) pipe.position.y = dirScalar * (this.scale/2) + (dirScalar * pos.y);			
-			else if (dir == DIR_LEFT || dir == DIR_RIGHT) pipe.position.x = dirScalar * (this.scale/2) + (dirScalar * pos.x);			
-			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) pipe.position.z = dirScalar * (this.scale/2) + (dirScalar * pos.z);
+			if (dir == DIR_UP || dir == DIR_DOWN) pipe.position.y = dirScalar * (this.scale/2) + pos.y;			
+			else if (dir == DIR_LEFT || dir == DIR_RIGHT) pipe.position.x = dirScalar * (this.scale/2) + pos.x;			
+			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) pipe.position.z = dirScalar * (this.scale/2) + pos.z;
 			
 		})		
 		.onComplete(function() {
 			var joint = new THREE.Mesh(jointGeo, jointMat);
-			if (dir == DIR_UP || dir == DIR_DOWN) joint.position.set(pos.x, pos.y + (dirScalar * length), pos.z);
-			else if (dir == DIR_LEFT || dir == DIR_RIGHT) joint.position.set(pos.x + (dirScalar * length), pos.y, pos.z);
-			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) joint.position.set(pos.x, pos.y, pos.z + (dirScalar * length));			
+			var endPos;
+			if (dir == DIR_UP || dir == DIR_DOWN) endPos = new THREE.Vector3(pos.x, pos.y + (dirScalar * length), pos.z);
+			else if (dir == DIR_LEFT || dir == DIR_RIGHT) endPos = new THREE.Vector3(pos.x + (dirScalar * length), pos.y, pos.z);
+			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) endPos = new THREE.Vector3(pos.x, pos.y, pos.z + (dirScalar * length));	
+			
+			joint.position.copy(endPos);
 			scene.add(joint);
+			completeFn(endPos);
 		})
 		.start();	
 		
@@ -126,7 +154,7 @@ function addPipe(pos, length, dir) {
 function render(time) {	
 	requestAnimationFrame( render );
 	controls.update(); 		
-	TWEEN.update( time );	
+	TWEEN.update(time);	
 	renderer.render( scene, camera );
 	
 }
