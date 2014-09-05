@@ -39,7 +39,8 @@ function init() {
 	//Camera
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);	
 	scene.add(camera);	
-	camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM+ROOM_SIZE);
+	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM+ROOM_SIZE);
+	camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
 	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
 	//camera.lookAt(new THREE.Vector3(HALF_ROOM,HALF_ROOM,HALF_ROOM));
 	
@@ -110,7 +111,7 @@ function addNext(startingPos, lastDir) {
 				|| (randDir == DIR_BACKWARD && lastDir == DIR_FORWARD)
 			);
 
-			var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
+			var randLength = Math.max(Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE)), .35);
 			switch(randDir){
 				case DIR_UP:
 					if(startingPos.y + randLength < ROOM_SIZE){
