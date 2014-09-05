@@ -103,8 +103,44 @@ function init() {
 function addNext(startingPos) {
 	
 	if (numPipes++ < PIPES_MAX) {
-		var randDir = Math.floor(Math.random() * 6); //6 possible directions			
-		var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
+		var outOfBox = true;
+		while(outOfBox){
+			var randDir = Math.floor(Math.random() * 6); //6 possible directions			
+			var randLength = Math.min(ROOM_SIZE - 1, Math.floor(Math.random() * ROOM_SIZE));
+
+			switch(randDir){
+				case DIR_UP:
+					if(startingPos.y + randLength < ROOM_SIZE){
+						outOfBox = false;
+					}
+					break;
+				case DIR_DOWN:
+					if(startingPos.y - randLength > 0){
+						outOfBox = false;
+					}
+					break;
+				case DIR_RIGHT:
+					if(startingPos.x + randLength < ROOM_SIZE){
+						outOfBox = false;
+					}
+					break;
+				case DIR_LEFT:
+					if(startingPos.x - randLength > 0){
+						outOfBox = false;
+					}
+					break;
+				case DIR_FORWARD:
+					if(startingPos.z + randLength < ROOM_SIZE){
+						outOfBox = false;
+					}
+					break;
+				case DIR_BACKWARDS:
+					if(startingPos.z - randLength > 0){
+						outOfBox = false;
+					}
+					break;
+			}
+		}
 		addPipe(startingPos, randLength, randDir, addNext);
 	}
 }
