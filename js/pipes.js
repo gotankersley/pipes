@@ -1,32 +1,43 @@
 'use strict';
 
 //Constants
-var PIPE_RADIUS = 0.10;
+var PIPE_RADIUS = GUI['Pipe radius'];
 var PIPE_NUM_SIDES = 10;
-var PIPE_ANIM_SPEED_PER_SECTION = 250;
-var PIPES_MAX = 1000;
+var PIPE_ANIM_SPEED_PER_SECTION = GUI['Pipe anim speed'];
+var PIPES_MAX = GUI['Pipes max'];
 
-var JOINT_RADIUS = 0.15;
+var JOINT_RADIUS = GUI['Joint radius'];
 var JOINT_NUM_SIDES = 10;
 
-var ROOM_SIZE = 20;
+var ROOM_SIZE = GUI['Room size'];
 var HALF_ROOM = ROOM_SIZE/2;
 
 var POSSIBLE_DIRS = 6;
 var DIR_UP = 0, DIR_RIGHT = 1, DIR_FORWARD = 2, DIR_DOWN = 3, DIR_LEFT = 4, DIR_BACKWARD = 5; //Poor man's enum
+
+var VIEW_OUTSIDE = 0;
+var VIEW_CENTER = 1;
+var VIEW_FLOOR = 2;
 
 //Global variables
 var container, scene, camera, renderer, controls;
 var origin;
 var floor;
 var numPipes = 0;
+var pipes = [];
 
 //Global materials
 var pipeGeo = new THREE.CylinderGeometry(PIPE_RADIUS, PIPE_RADIUS, 1, PIPE_NUM_SIDES, 1, false);
-var pipeMat = new THREE.MeshLambertMaterial({color:0xff0000});
-
+var pipeText = new THREE.ImageUtils.loadTexture( 'textures/metal.png');
+pipeText.wrapS = pipeText.wrapT = THREE.RepeatWrapping; 
+pipeText.repeat.set( 0.25, 0.25 );
+var pipeMat = new THREE.MeshBasicMaterial( { map: pipeText} );
+//var mirrorCamera = new THREE.CubeCamera(0.1, 100, 512);
+//mirrorCamera.position.set(HALF_ROOM, HALF_ROOM, HALF_ROOM);
+//var pipeMat = new THREE.MeshPhongMaterial({envMap:mirrorCamera.renderTarget});
+	
 var jointGeo = new THREE.SphereGeometry(JOINT_RADIUS, JOINT_NUM_SIDES, JOINT_NUM_SIDES);
-var jointMat = new THREE.MeshLambertMaterial({color:0x00ff00});
+var jointMat = new THREE.MeshLambertMaterial({color:0xaaaaaa});
 
 init();
 function init() {
@@ -34,16 +45,12 @@ function init() {
 	scene = new THREE.Scene;
 		
 	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;		
-	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;	
+	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 200;	
 
 	//Camera
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);	
 	scene.add(camera);	
-	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM+ROOM_SIZE);
-	camera.position.set(HALF_ROOM,0,HALF_ROOM);
-	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
-	//camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM);
-	//camera.lookAt(new THREE.Vector3(HALF_ROOM,HALF_ROOM,HALF_ROOM));
+	setView(VIEW_OUTSIDE);
 	
 	//Renderer
 	renderer = new THREE.WebGLRenderer( {antialias:true} );		
@@ -68,24 +75,38 @@ function init() {
 	scene.add(hemi);		
 		
 	//Origin
-	var originGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, PIPE_NUM_SIDES, 1, false);
-	var originMat = new THREE.MeshNormalMaterial();	
-	origin = new THREE.Mesh(originGeo, originMat);
-	scene.add(origin);
+	// var originGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.1, PIPE_NUM_SIDES, 1, false);
+	// var originMat = new THREE.MeshNormalMaterial();	
+	// origin = new THREE.Mesh(originGeo, originMat);
+	// scene.add(origin);
 	
 	//Room / viewing volume
 	var roomGeo = new THREE.BoxGeometry(ROOM_SIZE, ROOM_SIZE, ROOM_SIZE);
-	var roomMat = new THREE.MeshBasicMaterial({color: 0x444444, wireframe:true});
+	var roomMat = new THREE.MeshBasicMaterial({color: 0x444444, side:THREE.BackSide});
 	var room = new THREE.Mesh(roomGeo, roomMat);
 	room.position.set(HALF_ROOM, HALF_ROOM, HALF_ROOM);
 	scene.add(room);
 	
 	//Place pipes
-	startPipe();
-
+	//scene.add(mirrorCamera);
+	startPipe();	
 	
 	render();
 
+}
+
+function resetPipes() {
+	for (var i = 0; i < pipes.length; i++) {
+		scene.remove(pipes[i]);
+	}
+	pipes = [];
+	setView(VIEW_OUTSIDE);
+}
+
+function setView(view) {
+	if (view == VIEW_CENTER) camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM); //Center of room
+	else if (view == VIEW_FLOOR) camera.position.set(HALF_ROOM,0,HALF_ROOM);
+	else camera.position.set(HALF_ROOM,HALF_ROOM,HALF_ROOM+ROOM_SIZE); //Outside	
 }
 
 function startPipe() {
@@ -177,6 +198,7 @@ function addPipe(pos, length, dir, completeFn) {
 		.onUpdate(function () {			
 			if(!added){
 				scene.add(pipe);
+				pipes.push(pipe);
 				added = true;
 			}
 			pipe.scale.y = this.scale;
@@ -184,11 +206,13 @@ function addPipe(pos, length, dir, completeFn) {
 			else if (dir == DIR_LEFT || dir == DIR_RIGHT) pipe.position.x = dirScalar * (this.scale/2) + pos.x;			
 			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) pipe.position.z = dirScalar * (this.scale/2) + pos.z;
 
-			var endPos;
-			if (dir == DIR_UP || dir == DIR_DOWN) endPos = new THREE.Vector3(pos.x, pos.y + (dirScalar * this.scale), pos.z);
-			else if (dir == DIR_LEFT || dir == DIR_RIGHT) endPos = new THREE.Vector3(pos.x + (dirScalar * this.scale), pos.y, pos.z);
-			else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) endPos = new THREE.Vector3(pos.x, pos.y, pos.z + (dirScalar * this.scale));	
-			camera.lookAt(endPos);
+			if (GUI['Follow pipe']) {
+				var endPos;
+				if (dir == DIR_UP || dir == DIR_DOWN) endPos = new THREE.Vector3(pos.x, pos.y + (dirScalar * this.scale), pos.z);
+				else if (dir == DIR_LEFT || dir == DIR_RIGHT) endPos = new THREE.Vector3(pos.x + (dirScalar * this.scale), pos.y, pos.z);
+				else if (dir == DIR_FORWARD || dir == DIR_BACKWARD) endPos = new THREE.Vector3(pos.x, pos.y, pos.z + (dirScalar * this.scale));	
+				camera.lookAt(endPos);
+			}
 		})		
 		.onComplete(function() {
 			var joint = new THREE.Mesh(jointGeo, jointMat);
@@ -199,6 +223,7 @@ function addPipe(pos, length, dir, completeFn) {
 			
 			joint.position.copy(endPos);
 			scene.add(joint);
+			pipes.push(joint);
 			completeFn(endPos, dir);
 		})
 		.start();	
@@ -210,6 +235,7 @@ function render(time) {
 	requestAnimationFrame( render );
 	controls.update(); 		
 	TWEEN.update(time);	
+	//mirrorCamera.updateCubeMap(renderer, scene);
 	renderer.render( scene, camera );
 	
 }
